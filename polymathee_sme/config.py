@@ -6,6 +6,7 @@ import os
 from configparser import ConfigParser, NoSectionError
 from dotenv import load_dotenv
 
+
 @dataclasses.dataclass
 class Config:
     """Config variables"""

@@ -20,7 +20,7 @@ dependencies = [
   "flask_rq2",
   "flask_caching",
   "python-dotenv",
-  "mysql",
+  "mysql-connector-python",
   "requests",
   "setuptools",
   "schedule"]
