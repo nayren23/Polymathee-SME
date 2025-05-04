@@ -2,9 +2,9 @@
 # !/usr/bin/python
 
 from configparser import NoSectionError
-from polymathee_sme import app
 import mysql.connector
 from mysql.connector import Error
+from polymathee_sme import app
 
 
 def connect():
@@ -68,9 +68,10 @@ def execute_command(conn, query, params=None):
 
 
 def get_query(conn, query, params=None, return_dict=False):
+    """Query data from db"""
     if conn is None:
         raise ValueError("No database connection available.")
-    """Query data from db"""
+
     print(query)
     print("params", params)
     rows = None
