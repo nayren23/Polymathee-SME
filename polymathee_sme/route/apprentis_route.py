@@ -122,3 +122,29 @@ def get_duree_formation():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/organismes-gestion", methods=["GET"])
+def get_organismes_gestion():
+    """Identifier les organismes de gestion (OG) ayant le + grand nombre
+    d'établissements affiliés en 2024-2025
+    """
+    annee = request.args.get("annee")
+    try:
+        query = """
+            SELECT
+                og.libelle_og,
+                COUNT(DISTINCT f.id_etab) AS nombre_etablissements_affilies
+            FROM OrganismeGestion og
+            JOIN Formation f ON og.id_og = f.id_og
+            WHERE f.annee_scolaire = %s
+            GROUP BY og.libelle_og
+            ORDER BY nombre_etablissements_affilies DESC
+        """
+        conn = connect_mysql.connect()
+        values = (annee,)
+        select = connect_mysql.get_query(conn, query, values)
+        result = [{"libelle_og": row[0], "nombre_etablissements_affilies": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
