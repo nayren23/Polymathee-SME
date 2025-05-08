@@ -1,21 +1,9 @@
 """User related endpoints"""
-from flask import Blueprint, jsonify, make_response, request, send_file
-from flask_jwt_extended.exceptions import NoAuthorizationError
 
-from polymathee_sme import app, connect_mysql
-from polymathee_sme import app
+from flask import Blueprint, jsonify
+
+from polymathee_sme import connect_mysql
 from polymathee_sme.utils.exception.exceptions import ApiException
-from polymathee_sme.utils.exception.user_exceptions import EmailAlreadyVerifiedException
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-    get_jwt_identity,
-    jwt_required,
-    set_access_cookies,
-    set_refresh_cookies,
-    unset_jwt_cookies,
-    verify_jwt_in_request,
-)
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -38,7 +26,7 @@ def test():
     conn = connect_mysql.connect()
     query = """
     SELECT *
-    FROM utilisateur
+    FROM formation
     """
     select = connect_mysql.get_query(conn, query)
 
