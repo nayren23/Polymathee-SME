@@ -148,3 +148,32 @@ def get_organismes_gestion():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/specialites-handicap", methods=["GET"])
+def get_specialites_handicap():
+    """Identifier les Spécialités ayant la Plus Grande Proportion
+    de Jeunes en Situation de Handicap en 2024-2025"""
+    annee = request.args.get("annee")
+
+    try:
+        query = """
+            SELECT
+                s.libelle_specialite,
+                CAST(SUM(CASE WHEN j.handicap_oui_non_vide = 'Oui' THEN 1 ELSE 0 END) AS DECIMAL) * 100 / COUNT(*) AS pourcentage_handicap
+            FROM Specialite s
+            JOIN Formation f ON s.code_groupe_specialite = f.code_groupe_specialite
+            JOIN Inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
+            JOIN Jeune j ON i.annee_scolaire_1 = j.annee_scolaire AND i.num_section = j.num_section
+            WHERE f.annee_scolaire = %s 
+            GROUP BY s.libelle_specialite
+            ORDER BY pourcentage_handicap DESC;
+
+        """
+        conn = connect_mysql.connect()
+        values = (annee,)
+        select = connect_mysql.get_query(conn, query, values)
+        result = [{"libelle_specialite": row[0], "pourcentage_handicap": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
