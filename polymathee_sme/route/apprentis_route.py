@@ -4,38 +4,26 @@ from polymathee_sme import connect_mysql
 apprentis = Blueprint("apprentis", __name__, url_prefix="/apprentis")
 
 
-@apprentis.route("/all", methods=["GET"])
-def get_all_apprentis():
-    conn = connect_mysql.connect()
-    query = "SELECT * FROM apprentis LIMIT 100"
-    result = connect_mysql.get_query(conn, query)
-    return jsonify(result)
+@apprentis.route("/most-common-specialties", methods=["GET"])
+def get_most_common_specialties():
+    """Analyse des spécialités les plus courantes par type de diplôme"""
 
-
-@apprentis.route("/stats/regions", methods=["GET"])
-def get_stats_by_region():
     conn = connect_mysql.connect()
     query = """
-    SELECT region, SUM(effectif) AS total_apprentis
-    FROM apprentis
-    GROUP BY region
-    ORDER BY total_apprentis DESC
+    SELECT
+    d.type_diplome,
+    s.libelle_specialite,
+    COUNT(f.numero_section) AS nombre_formations
+    FROM Diplome d
+    JOIN Formation f ON d.diplome = f.diplome
+    JOIN Specialite s ON f.code_groupe_specialite = s.code_groupe_specialite
+    GROUP BY d.type_diplome, s.libelle_specialite
+    ORDER BY d.type_diplome, nombre_formations DESC
     """
-    result = connect_mysql.get_query(conn, query)
-    return jsonify(result)
+    raw_result = connect_mysql.get_query(conn, query)
 
-
-@apprentis.route("/filter", methods=["GET"])
-def filter_apprentis():
-    region = request.args.get("region")
-    annee = request.args.get("annee")
-    conn = connect_mysql.connect()
-
-    query = "SELECT * FROM apprentis WHERE 1=1"
-    if region:
-        query += f" AND region = '{region}'"
-    if annee:
-        query += f" AND annee = '{annee}'"
-
-    result = connect_mysql.get_query(conn, query)
-    return jsonify(result)
+    # Conversion en liste de dictionnaires
+    formatted_result = [
+        {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
+    ]
+    return jsonify(formatted_result)
