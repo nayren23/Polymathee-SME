@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from polymathee_sme import connect_mysql
 
 apprentis = Blueprint("apprentis", __name__, url_prefix="/apprentis")
@@ -49,3 +49,48 @@ def get_top_etablissements_formations():
     select = connect_mysql.get_query(conn, query)
     result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
     return jsonify(result)
+
+
+@apprentis.route("/diplomes", methods=["GET"])
+def get_diplomes():
+    """
+    Retourne la liste des diplomes
+    """
+    try:
+        conn = connect_mysql.connect()
+        query = "SELECT DISTINCT diplome FROM Diplome ORDER BY diplome;"
+        select = connect_mysql.get_query(conn, query)
+        result = [{"diplome": row[0]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/ville-jeunes", methods=["GET"])
+def get_villes_by_diplome():
+    diplome = request.args.get("diplome")
+    annee = request.args.get("annee")
+
+    if not diplome or not annee:
+        return jsonify({"error": "Paramètres diplome et annee requis"}), 400
+
+    try:
+        query = """
+            SELECT cj.libelle_ville_jeune AS ville, COUNT(*) AS nombre_jeunes
+            FROM Diplome d
+            JOIN Formation f ON d.diplome = f.diplome
+            JOIN Inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
+            JOIN Jeune j ON i.annee_scolaire_1 = j.annee_scolaire AND i.num_section = j.num_section
+            JOIN CommuneJeune cj ON j.annee_scolaire_2 = cj.annee_scolaire AND j.num_section_2 = cj.num_section
+            WHERE d.diplome = %s AND f.annee_scolaire = %s
+            GROUP BY cj.libelle_ville_jeune
+            ORDER BY nombre_jeunes DESC
+            LIMIT 10;
+        """
+        conn = connect_mysql.connect()
+        values = (diplome, annee)
+        select = connect_mysql.get_query(conn, query, values)
+        result = [{"ville": row[0], "nombre_jeunes": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
