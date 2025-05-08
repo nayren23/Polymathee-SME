@@ -6,6 +6,7 @@ from configparser import NoSectionError
 import mysql.connector
 from mysql.connector import Error
 from polymathee_sme import app
+import os
 
 
 def connect():
@@ -14,12 +15,15 @@ def connect():
     try:
         # read connection parameters
         params = {}
-        params["database"] = app.config["DB_NAME"]
-        params["user"] = app.config["DB_USER"]
-        params["password"] = app.config["DB_PWD"]
-        params["host"] = app.config["DB_HOST"]
-        params["port"] = app.config["DB_PORT"]
-
+        params["database"] = os.environ.get("DB_NAME")
+        params["user"] = os.environ.get("DB_USER")
+        params["password"] = os.environ.get("DB_PWD")
+        params["host"] = os.environ.get("DB_HOST")
+        db_port_str = os.environ.get("DB_PORT")
+        if db_port_str:
+            params["port"] = int(db_port_str)
+        else:
+            params["port"] = 3306  # Port MySQL par défaut si non spécifié
         # connect to the PostgreSQL server
         print("Connecting to the Mysql database...")
         conn = mysql.connector.connect(**params)
