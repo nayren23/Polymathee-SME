@@ -36,5 +36,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.LATEST_TAG }}   
-          build-args: | #we need to pass default values to the build
-            FLASK_DEBUG=${{ secrets.FLASK_DEBUG }}
