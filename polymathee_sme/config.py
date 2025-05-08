@@ -1,6 +1,6 @@
 """Configure database connection"""
+
 # !/usr/bin/python
-from ast import literal_eval
 import dataclasses
 import os
 from dotenv import load_dotenv
@@ -23,7 +23,7 @@ class Config:
     DB_PORT = os.getenv("DB_PORT")
 
     # FLask configuration
-    FLASK_DEBUG = literal_eval(os.getenv("FLASK_DEBUG"))
+    FLASK_DEBUG = os.getenv("FLASK_DEBUG")
     FLASK_HOST = os.getenv("FLASK_HOST")
     FLASK_PORT = os.getenv("FLASK_PORT")
 

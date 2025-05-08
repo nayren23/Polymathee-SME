@@ -1,4 +1,5 @@
 """User related endpoints"""
+
 from flask import Blueprint, jsonify
 
 from polymathee_sme import connect_mysql
@@ -25,7 +26,7 @@ def test():
     conn = connect_mysql.connect()
     query = """
     SELECT *
-    FROM utilisateur
+    FROM formation
     """
     select = connect_mysql.get_query(conn, query)
 
