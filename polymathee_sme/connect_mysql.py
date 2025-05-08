@@ -1,4 +1,5 @@
 """MySQL database interactions"""
+
 # !/usr/bin/python
 
 from configparser import NoSectionError

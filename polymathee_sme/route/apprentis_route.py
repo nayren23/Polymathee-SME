@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 from polymathee_sme import connect_mysql
 
 apprentis = Blueprint("apprentis", __name__, url_prefix="/apprentis")
@@ -27,3 +27,25 @@ def get_most_common_specialties():
         {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
     ]
     return jsonify(formatted_result)
+
+
+@apprentis.route("/top-schools-by-diplomas", methods=["GET"])
+def get_top_etablissements_formations():
+    """
+    Retourne les établissements offrant le plus de diplômes différents en 2024-2025.
+    """
+
+    conn = connect_mysql.connect()
+    query = """
+        SELECT
+            e.nom_complet_cfa,
+            COUNT(DISTINCT f.diplome) AS nb_diplomes_diff
+        FROM Etablissement e
+        JOIN Formation f ON e.id_etab = f.id_etab
+        WHERE f.annee_scolaire = '2024-2025' 
+        GROUP BY e.nom_complet_cfa
+        ORDER BY nb_diplomes_diff DESC; 
+    """
+    select = connect_mysql.get_query(conn, query)
+    result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
+    return jsonify(result)
