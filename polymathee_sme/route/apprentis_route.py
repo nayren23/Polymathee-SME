@@ -68,6 +68,7 @@ def get_diplomes():
 
 @apprentis.route("/ville-jeunes", methods=["GET"])
 def get_villes_by_diplome():
+    """Identifier les Villes d'Origine des Jeunes les Plus Représentées pour un Diplôme Spécifique (ex: BTS ) en 2024-2025"""
     diplome = request.args.get("diplome")
     annee = request.args.get("annee")
 
@@ -91,6 +92,33 @@ def get_villes_by_diplome():
         values = (diplome, annee)
         select = connect_mysql.get_query(conn, query, values)
         result = [{"ville": row[0], "nombre_jeunes": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/duree-formation", methods=["GET"])
+def get_duree_formation():
+    """Comparaison de la durée moyenne des formations par type de diplôme en 2024-2025"""
+    annee = request.args.get("annee")
+    if not annee:
+        return jsonify({"error": "Paramètres annee requis"}), 400
+    try:
+        query = """
+        SELECT
+            d.type_diplome,
+            AVG(f.duree_formation_mois) AS duree_moyenne_mois
+        FROM Diplome d
+        JOIN Formation f ON d.diplome = f.diplome
+        WHERE f.annee_scolaire = %s 
+        GROUP BY d.type_diplome
+        ORDER BY duree_moyenne_mois DESC;
+        """
+
+        conn = connect_mysql.connect()
+        values = (annee,)
+        select = connect_mysql.get_query(conn, query, values)
+        result = [{"type_diplome": row[0], "duree_moyenne_mois": row[1]} for row in select]
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
