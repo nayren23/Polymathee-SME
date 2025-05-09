@@ -4,29 +4,43 @@ from polymathee_sme import connect_mysql
 apprentis = Blueprint("apprentis", __name__, url_prefix="/apprentis")
 
 
+@apprentis.route("/hello-world", methods=["GET"])
+def register():
+    """Hello World endpoint"""
+    try:
+        response = jsonify(message="HELLO_WORLD"), 200
+        return response
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @apprentis.route("/most-common-specialties", methods=["GET"])
 def get_most_common_specialties():
     """Analyse des spécialités les plus courantes par type de diplôme"""
 
-    conn = connect_mysql.connect()
-    query = """
-    SELECT
-    d.type_diplome,
-    s.libelle_specialite,
-    COUNT(f.numero_section) AS nombre_formations
-    FROM Diplome d
-    JOIN Formation f ON d.diplome = f.diplome
-    JOIN Specialite s ON f.code_groupe_specialite = s.code_groupe_specialite
-    GROUP BY d.type_diplome, s.libelle_specialite
-    ORDER BY d.type_diplome, nombre_formations DESC
-    """
-    raw_result = connect_mysql.get_query(conn, query)
+    try:
+        conn = connect_mysql.connect()
+        query = """
+        SELECT
+        d.type_diplome,
+        s.libelle_specialite,
+        COUNT(f.numero_section) AS nombre_formations
+        FROM Diplome d
+        JOIN Formation f ON d.diplome = f.diplome
+        JOIN Specialite s ON f.code_groupe_specialite = s.code_groupe_specialite
+        GROUP BY d.type_diplome, s.libelle_specialite
+        ORDER BY d.type_diplome, nombre_formations DESC
+        """
+        raw_result = connect_mysql.get_query(conn, query)
 
-    # Conversion en liste de dictionnaires
-    formatted_result = [
-        {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
-    ]
-    return jsonify(formatted_result)
+        # Conversion en liste de dictionnaires
+        formatted_result = [
+            {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
+        ]
+        return jsonify(formatted_result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @apprentis.route("/top-schools-by-diplomas", methods=["GET"])
@@ -34,21 +48,23 @@ def get_top_etablissements_formations():
     """
     Retourne les établissements offrant le plus de diplômes différents en 2024-2025.
     """
-
-    conn = connect_mysql.connect()
-    query = """
-        SELECT
-            e.nom_complet_cfa,
-            COUNT(DISTINCT f.diplome) AS nb_diplomes_diff
-        FROM Etablissement e
-        JOIN Formation f ON e.id_etab = f.id_etab
-        WHERE f.annee_scolaire = '2024-2025' 
-        GROUP BY e.nom_complet_cfa
-        ORDER BY nb_diplomes_diff DESC; 
-    """
-    select = connect_mysql.get_query(conn, query)
-    result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
-    return jsonify(result)
+    try:
+        conn = connect_mysql.connect()
+        query = """
+            SELECT
+                e.nom_complet_cfa,
+                COUNT(DISTINCT f.diplome) AS nb_diplomes_diff
+            FROM Etablissement e
+            JOIN Formation f ON e.id_etab = f.id_etab
+            WHERE f.annee_scolaire = '2024-2025' 
+            GROUP BY e.nom_complet_cfa
+            ORDER BY nb_diplomes_diff DESC; 
+        """
+        select = connect_mysql.get_query(conn, query)
+        result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @apprentis.route("/diplomes", methods=["GET"])
