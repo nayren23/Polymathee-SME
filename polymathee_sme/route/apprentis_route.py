@@ -4,29 +4,43 @@ from polymathee_sme import connect_mysql
 apprentis = Blueprint("apprentis", __name__, url_prefix="/apprentis")
 
 
+@apprentis.route("/hello-world", methods=["GET"])
+def register():
+    """Hello World endpoint"""
+    try:
+        response = jsonify(message="HELLO_WORLD"), 200
+        return response
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @apprentis.route("/most-common-specialties", methods=["GET"])
 def get_most_common_specialties():
     """Analyse des spécialités les plus courantes par type de diplôme"""
 
-    conn = connect_mysql.connect()
-    query = """
-    SELECT
-    d.type_diplome,
-    s.libelle_specialite,
-    COUNT(f.numero_section) AS nombre_formations
-    FROM Diplome d
-    JOIN Formation f ON d.diplome = f.diplome
-    JOIN Specialite s ON f.code_groupe_specialite = s.code_groupe_specialite
-    GROUP BY d.type_diplome, s.libelle_specialite
-    ORDER BY d.type_diplome, nombre_formations DESC
-    """
-    raw_result = connect_mysql.get_query(conn, query)
+    try:
+        conn = connect_mysql.connect()
+        query = """
+            SELECT
+                d.type_diplome,
+                s.libelle_specialite,
+                COUNT(f.numero_section) AS nombre_formations
+            FROM diplome d
+            JOIN formation f ON d.diplome = f.diplome
+            JOIN specialite s ON f.code_groupe_specialite = s.code_groupe_specialite
+            GROUP BY d.type_diplome, s.libelle_specialite
+            ORDER BY d.type_diplome, nombre_formations DESC;
+        """
+        raw_result = connect_mysql.get_query(conn, query)
 
-    # Conversion en liste de dictionnaires
-    formatted_result = [
-        {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
-    ]
-    return jsonify(formatted_result)
+        # Conversion en liste de dictionnaires
+        formatted_result = [
+            {"type_diplome": row[0], "libelle_specialite": row[1], "nombre_formations": row[2]} for row in raw_result
+        ]
+        return jsonify(formatted_result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @apprentis.route("/top-schools-by-diplomas", methods=["GET"])
@@ -34,21 +48,23 @@ def get_top_etablissements_formations():
     """
     Retourne les établissements offrant le plus de diplômes différents en 2024-2025.
     """
-
-    conn = connect_mysql.connect()
-    query = """
-        SELECT
-            e.nom_complet_cfa,
-            COUNT(DISTINCT f.diplome) AS nb_diplomes_diff
-        FROM Etablissement e
-        JOIN Formation f ON e.id_etab = f.id_etab
-        WHERE f.annee_scolaire = '2024-2025' 
-        GROUP BY e.nom_complet_cfa
-        ORDER BY nb_diplomes_diff DESC; 
-    """
-    select = connect_mysql.get_query(conn, query)
-    result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
-    return jsonify(result)
+    try:
+        conn = connect_mysql.connect()
+        query = """
+            SELECT
+                e.nom_complet_cfa,
+                COUNT(DISTINCT f.diplome) AS nb_diplomes_diff
+            FROM etablissement e
+            JOIN formation f ON e.id_etab = f.id_etab
+            WHERE f.annee_scolaire = '08/09' 
+            GROUP BY e.nom_complet_cfa
+            ORDER BY nb_diplomes_diff DESC;
+        """
+        select = connect_mysql.get_query(conn, query)
+        result = [{"etablissement": row[0], "nombre_diplomes_differents": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @apprentis.route("/diplomes", methods=["GET"])
@@ -58,7 +74,7 @@ def get_diplomes():
     """
     try:
         conn = connect_mysql.connect()
-        query = "SELECT DISTINCT diplome FROM Diplome ORDER BY diplome;"
+        query = "SELECT DISTINCT diplome FROM diplome ORDER BY diplome;"
         select = connect_mysql.get_query(conn, query)
         result = [{"diplome": row[0]} for row in select]
         return jsonify(result)
@@ -77,13 +93,14 @@ def get_villes_by_diplome():
 
     try:
         query = """
-            SELECT cj.libelle_ville_jeune AS ville, COUNT(*) AS nombre_jeunes
-            FROM Diplome d
-            JOIN Formation f ON d.diplome = f.diplome
-            JOIN Inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
-            JOIN Jeune j ON i.annee_scolaire_1 = j.annee_scolaire AND i.num_section = j.num_section
-            JOIN CommuneJeune cj ON j.annee_scolaire_2 = cj.annee_scolaire AND j.num_section_2 = cj.num_section
-            WHERE d.diplome = %s AND f.annee_scolaire = %s
+            SELECT cj.libelle_ville_jeune,  COUNT(*) AS nombre_jeunes
+            FROM diplome d
+            JOIN formation f ON d.diplome = f.diplome
+            JOIN inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
+            JOIN jeune j ON i.annee_scolaire_1 = j.annee_scolaire AND i.num_section = j.num_section
+            JOIN communejeune cj ON j.annee_scolaire_2 = cj.annee_scolaire AND j.num_section_2 = cj.num_section
+            WHERE d.diplome = %s 
+            AND f.annee_scolaire = %s
             GROUP BY cj.libelle_ville_jeune
             ORDER BY nombre_jeunes DESC
             LIMIT 10;
@@ -105,14 +122,14 @@ def get_duree_formation():
         return jsonify({"error": "Paramètres annee requis"}), 400
     try:
         query = """
-        SELECT
-            d.type_diplome,
-            AVG(f.duree_formation_mois) AS duree_moyenne_mois
-        FROM Diplome d
-        JOIN Formation f ON d.diplome = f.diplome
-        WHERE f.annee_scolaire = %s 
-        GROUP BY d.type_diplome
-        ORDER BY duree_moyenne_mois DESC;
+            SELECT
+                d.type_diplome,
+                AVG(f.duree_formation_mois) AS duree_moyenne_mois
+            FROM diplome d
+            JOIN formation f ON d.diplome = f.diplome
+            WHERE f.annee_scolaire = %s 
+            GROUP BY d.type_diplome
+            ORDER BY duree_moyenne_mois DESC;
         """
 
         conn = connect_mysql.connect()
@@ -135,8 +152,8 @@ def get_organismes_gestion():
             SELECT
                 og.libelle_og,
                 COUNT(DISTINCT f.id_etab) AS nombre_etablissements_affilies
-            FROM OrganismeGestion og
-            JOIN Formation f ON og.id_og = f.id_og
+            FROM organismegestion og
+            JOIN formation f ON og.id_og = f.id_og
             WHERE f.annee_scolaire = %s
             GROUP BY og.libelle_og
             ORDER BY nombre_etablissements_affilies DESC
@@ -160,12 +177,12 @@ def get_specialites_handicap():
         query = """
             SELECT
                 s.libelle_specialite,
-                CAST(SUM(CASE WHEN j.handicap_oui_non_vide = 'Oui' THEN 1 ELSE 0 END) AS DECIMAL) * 100 / COUNT(*) AS pourcentage_handicap
-            FROM Specialite s
-            JOIN Formation f ON s.code_groupe_specialite = f.code_groupe_specialite
-            JOIN Inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
-            JOIN Jeune j ON i.annee_scolaire_1 = j.annee_scolaire AND i.num_section = j.num_section
-            WHERE f.annee_scolaire = %s 
+                CAST(SUM(CASE WHEN j.handicap_oui_non_vide = 'O' THEN 1 ELSE 0 END) AS DECIMAL) * 100 / COUNT(*) AS pourcentage_handicap
+            FROM specialite s
+            JOIN formation f ON s.code_groupe_specialite = f.code_groupe_specialite
+            JOIN inscrire i ON f.annee_scolaire = i.annee_scolaire AND f.numero_section = i.numero_section
+            JOIN jeune j ON i.annee_scolaire = j.annee_scolaire AND i.num_section = j.num_section
+            WHERE f.annee_scolaire = %s
             GROUP BY s.libelle_specialite
             ORDER BY pourcentage_handicap DESC;
 
@@ -174,6 +191,21 @@ def get_specialites_handicap():
         values = (annee,)
         select = connect_mysql.get_query(conn, query, values)
         result = [{"libelle_specialite": row[0], "pourcentage_handicap": row[1]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/annee-scolaire", methods=["GET"])
+def get_annee_scolaire():
+    """Récupération de la liste des annee"""
+    try:
+        query = """
+            SELECT distinct annee_scolaire FROM jeune;
+        """
+        conn = connect_mysql.connect()
+        select = connect_mysql.get_query(conn, query)
+        result = [{"annee": row[0]} for row in select]
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

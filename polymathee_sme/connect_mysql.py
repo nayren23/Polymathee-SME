@@ -2,11 +2,10 @@
 
 # !/usr/bin/python
 
+import os
 from configparser import NoSectionError
 import mysql.connector
 from mysql.connector import Error
-from polymathee_sme import app
-import os
 
 
 def connect():
