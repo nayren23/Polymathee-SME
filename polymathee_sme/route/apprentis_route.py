@@ -193,3 +193,18 @@ def get_specialites_handicap():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@apprentis.route("/annee-scolaire", methods=["GET"])
+def get_annee_scolaire():
+    """Récupération de la liste des annee"""
+    try:
+        query = """
+            SELECT distinct annee_scolaire FROM jeune;
+        """
+        conn = connect_mysql.connect()
+        select = connect_mysql.get_query(conn, query)
+        result = [{"annee": row[0]} for row in select]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
